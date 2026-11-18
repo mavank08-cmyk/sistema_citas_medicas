@@ -1,55 +1,10 @@
 use sistema_citas_medicas
-use sistema_citas_medicas
+
 db.createCollection("pacientes")
 db.createCollection("medicos")
 db.createCollection("citas")
+
 show collections
-for (let i = 6; i <= 30; i++) {
-    db.pacientes.insertOne({
-        _id: i,
-        nombre: "Paciente " + i,
-        edad: 20 + (i % 45),
-        genero: i % 2 === 0 ? "Femenino" : "Masculino",
-        telefono: "30000000" + i,
-        correo: "paciente" + i + "@email.com"
-    });
-}
-
-let especialidades = [
-    "Medicina General",
-    "Pediatría",
-    "Cardiología",
-    "Dermatología",
-    "Odontología"
-];
-
-for (let i = 6; i <= 10; i++) {
-    db.medicos.insertOne({
-        _id: i,
-        nombre: "Medico " + i,
-        especialidad: especialidades[(i - 1) % 5],
-        consultorio: "10" + i,
-        horario: "08:00 - 16:00"
-    });
-}
-
-let especialidades = [
-    "Medicina General",
-    "Pediatría",
-    "Cardiología",
-    "Dermatología",
-    "Odontología"
-];
-
-for (let i = 6; i <= 10; i++) {
-    db.medicos.insertOne({
-        _id: i,
-        nombre: "Medico " + i,
-        especialidad: especialidades[(i - 1) % 5],
-        consultorio: "10" + i,
-        horario: "08:00 - 16:00"
-    });
-}
 
 db.pacientes.insertMany([
     {
@@ -94,12 +49,94 @@ db.pacientes.insertMany([
     }
 ])
 
+
+
+for (let i = 6; i <= 30; i++) {
+    db.pacientes.insertOne({
+        _id: i,
+        nombre: "Paciente " + i,
+        edad: 20 + (i % 45),
+        genero: i % 2 === 0 ? "Femenino" : "Masculino",
+        telefono: "30000000" + i,
+        correo: "paciente" + i + "@email.com"
+    });
+}
+
+
+
+db.medicos.insertMany([
+    {
+        _id: 1,
+        nombre: "Andrés Pérez",
+        especialidad: "Medicina General",
+        consultorio: "101",
+        horario: "08:00 - 16:00"
+    },
+    {
+        _id: 2,
+        nombre: "Camila Torres",
+        especialidad: "Pediatría",
+        consultorio: "102",
+        horario: "08:00 - 15:00"
+    },
+    {
+        _id: 3,
+        nombre: "Julián Herrera",
+        especialidad: "Cardiología",
+        consultorio: "103",
+        horario: "09:00 - 17:00"
+    },
+    {
+        _id: 4,
+        nombre: "Diana Castro",
+        especialidad: "Dermatología",
+        consultorio: "104",
+        horario: "08:00 - 16:00"
+    },
+    {
+        _id: 5,
+        nombre: "Felipe Moreno",
+        especialidad: "Odontología",
+        consultorio: "105",
+        horario: "09:00 - 17:00"
+    }
+])
+
+
+
+let especialidades = [
+    "Medicina General",
+    "Pediatría",
+    "Cardiología",
+    "Dermatología",
+    "Odontología"
+];
+
+for (let i = 6; i <= 10; i++) {
+    db.medicos.insertOne({
+        _id: i,
+        nombre: "Medico " + i,
+        especialidad: especialidades[(i - 1) % 5],
+        consultorio: "10" + i,
+        horario: "08:00 - 16:00"
+    });
+}
+
+
 db.pacientes.countDocuments()
 db.medicos.countDocuments()
 db.citas.countDocuments()
+
+
 db.pacientes.find()
+
+
 db.medicos.find()
+
+
 db.citas.find()
+
+
 db.citas.aggregate([
     {
         $lookup: {
@@ -134,6 +171,9 @@ db.citas.aggregate([
         }
     }
 ])
+
+
+
 db.citas.aggregate([
     {
         $lookup: {
@@ -175,6 +215,9 @@ db.citas.aggregate([
         }
     }
 ])
+
+
+
 db.citas.aggregate([
     {
         $lookup: {
@@ -199,28 +242,29 @@ db.citas.aggregate([
         }
     }
 ])
+
+
+
 db.citas.aggregate([
     {
-        $group: {
-            _id: "$estado",
-            cantidad: { $sum: 1 }
+        $match: {
+            fechaInicio: {
+                $gte: ISODate("2026-11-10T00:00:00.000Z"),
+                $lt: ISODate("2026-11-12T00:00:00.000Z")
+            }
         }
     },
     {
         $group: {
             _id: null,
-            estados: {
-                $push: {
-                    estado: "$_id",
-                    cantidad: "$cantidad"
-                }
+            totalCitasPeriodo: {
+                $sum: 1
             },
-            totalCitas: { $sum: "$cantidad" },
             totalCanceladas: {
                 $sum: {
                     $cond: [
-                        { $eq: ["$_id", "Cancelada"] },
-                        "$cantidad",
+                        { $eq: ["$estado", "Cancelada"] },
+                        1,
                         0
                     ]
                 }
@@ -230,18 +274,25 @@ db.citas.aggregate([
     {
         $project: {
             _id: 0,
-            estados: 1,
-            totalCitas: 1,
+            totalCitasPeriodo: 1,
             totalCanceladas: 1,
             porcentajeCancelacion: {
                 $multiply: [
-                    { $divide: ["$totalCanceladas", "$totalCitas"] },
+                    {
+                        $divide: [
+                            "$totalCanceladas",
+                            "$totalCitasPeriodo"
+                        ]
+                    },
                     100
                 ]
             }
         }
     }
 ])
+
+
+
 db.pacientes.insertOne({
     _id: 31,
     nombre: "Daniela López",
@@ -250,9 +301,16 @@ db.pacientes.insertOne({
     telefono: "3015556677",
     correo: "daniela@email.com"
 })
+
+
 db.pacientes.findOne({ _id: 31 })
+
+
 db.pacientes.find()
+
 db.pacientes.findOne({ _id: 5 })
+
+
 db.pacientes.updateOne(
     { _id: 31 },
     {
@@ -261,7 +319,48 @@ db.pacientes.updateOne(
         }
     }
 )
+
+
 db.pacientes.findOne({ _id: 31 })
+
+
+
+db.pacientes.updateMany(
+    {
+        fechaNacimiento: { $exists: false }
+    },
+    [
+        {
+            $set: {
+                fechaNacimiento: {
+                    $dateFromParts: {
+                        year: {
+                            $subtract: [
+                                2026,
+                                "$edad"
+                            ]
+                        },
+                        month: {
+                            $add: [
+                                { $floor: { $multiply: [{ $rand: {} }, 12] } },
+                                1
+                            ]
+                        },
+                        day: {
+                            $add: [
+                                { $floor: { $multiply: [{ $rand: {} }, 28] } },
+                                1
+                            ]
+                        }
+                    }
+                }
+            }
+        }
+    ]
+)
+
+
+
 db.pacientes.insertOne({
     _id: 999,
     nombre: "Paciente Temporal",
@@ -270,29 +369,46 @@ db.pacientes.insertOne({
     telefono: "3009999999",
     correo: "temporal@email.com"
 })
+
+
 db.pacientes.deleteOne({
     _id: 999
 })
+
+
 db.pacientes.findOne({
     _id: 999
 })
+
+
 db.pacientes.find({
-    edad: { $gt: 30 }
-})
-db.pacientes.find({
-    edad: {
-        $gte: 25,
-        $lte: 40
+    fechaNacimiento: {
+        $lt: ISODate("1996-11-16T00:00:00.000Z")
     }
 })
+
+
+db.pacientes.find({
+    fechaNacimiento: {
+        $gte: ISODate("1986-11-17T00:00:00.000Z"),
+        $lte: ISODate("2001-11-16T00:00:00.000Z")
+    }
+})
+
+
 db.medicos.find({
     especialidad: "Cardiología"
 })
+
+
 db.citas.find({
     estado: {
         $in: ["Atendida", "Cancelada"]
     }
 })
+
+
+
 db.citas.aggregate([
     {
         $lookup: {
@@ -327,11 +443,16 @@ db.citas.aggregate([
         }
     }
 ])
+
+
 db.pacientes.aggregate([
     {
         $count: "totalPacientes"
     }
 ])
+
+
+
 db.citas.aggregate([
     {
         $group: {
@@ -340,12 +461,20 @@ db.citas.aggregate([
         }
     }
 ])
+
+
 db.pacientes.aggregate([
     {
         $group: {
             _id: null,
             promedioEdad: {
-                $avg: "$edad"
+                $avg: {
+                    $dateDiff: {
+                        startDate: "$fechaNacimiento",
+                        endDate: ISODate("2026-11-16T00:00:00.000Z"),
+                        unit: "year"
+                    }
+                }
             }
         }
     },
@@ -356,6 +485,8 @@ db.pacientes.aggregate([
         }
     }
 ])
+
+
 db.citas.aggregate([
     {
         $group: {
@@ -371,14 +502,25 @@ db.citas.aggregate([
         }
     }
 ])
+
+
+
 db.citas.aggregate([
+    {
+        $match: {
+            fechaInicio: {
+                $gte: ISODate("2026-11-10T00:00:00.000Z"),
+                $lt: ISODate("2026-11-12T00:00:00.000Z")
+            }
+        }
+    },
     {
         $group: {
             _id: null,
-            totalCitas: {
+            totalCitasPeriodo: {
                 $sum: 1
             },
-            canceladas: {
+            totalCanceladas: {
                 $sum: {
                     $cond: [
                         { $eq: ["$estado", "Cancelada"] },
@@ -392,17 +534,25 @@ db.citas.aggregate([
     {
         $project: {
             _id: 0,
-            totalCitas: 1,
-            canceladas: 1,
+            totalCitasPeriodo: 1,
+            totalCanceladas: 1,
             porcentajeCancelacion: {
                 $multiply: [
-                    { $divide: ["$canceladas", "$totalCitas"] },
+                    {
+                        $divide: [
+                            "$totalCanceladas",
+                            "$totalCitasPeriodo"
+                        ]
+                    },
                     100
                 ]
             }
         }
     }
 ])
+
+
+
 db.citas.aggregate([
     {
         $lookup: {
@@ -429,5 +579,78 @@ db.citas.aggregate([
         }
     }
 ])
+
+
+
+db.citas.aggregate([
+    {
+        $match: {
+            fechaInicio: {
+                $gte: ISODate("2026-11-10T00:00:00.000Z"),
+                $lt: ISODate("2026-11-12T00:00:00.000Z")
+            }
+        }
+    },
+    {
+        $lookup: {
+            from: "medicos",
+            localField: "medicoId",
+            foreignField: "_id",
+            as: "medico"
+        }
+    },
+    {
+        $unwind: "$medico"
+    },
+    {
+        $group: {
+            _id: "$medico.especialidad",
+            totalCitas: {
+                $sum: 1
+            }
+        }
+    },
+    {
+        $sort: {
+            totalCitas: -1
+        }
+    }
+])
+
+
+
+db.citas.aggregate([
+    {
+        $match: {
+            fechaInicio: {
+                $gte: ISODate("2026-11-10T00:00:00.000Z"),
+                $lt: ISODate("2026-11-12T00:00:00.000Z")
+            }
+        }
+    },
+    {
+        $group: {
+            _id: {
+                $dateToString: {
+                    format: "%H:00",
+                    date: "$fechaInicio",
+                    timezone: "America/Bogota"
+                }
+            },
+            totalCitas: {
+                $sum: 1
+            }
+        }
+    },
+    {
+        $sort: {
+            totalCitas: -1
+        }
+    }
+])
+
+
+
+
 
 
